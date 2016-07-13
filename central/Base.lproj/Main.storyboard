@@ -19,7 +19,7 @@
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="yzT-Jp-aDJ">
-                                <rect key="frame" x="250" y="243" width="100" height="30"/>
+                                <rect key="frame" x="276" y="243" width="41" height="30"/>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="100" id="5mU-Vk-fKL"/>
                                 </constraints>
@@ -33,43 +33,33 @@
                                     <action selector="scan:" destination="BYZ-38-t0r" eventType="touchUpInside" id="HRX-kh-nYt"/>
                                 </connections>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="fax-MT-LyA">
-                                <rect key="frame" x="250" y="303" width="100" height="30"/>
-                                <constraints>
-                                    <constraint firstAttribute="width" constant="100" id="hZu-ER-r8O"/>
-                                </constraints>
-                                <state key="normal" title="LED"/>
+                            <switch opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" verticalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" translatesAutoresizingMaskIntoConstraints="NO" id="hm6-Ii-bp4">
+                                <rect key="frame" x="276" y="371" width="51" height="31"/>
                                 <connections>
-                                    <action selector="led:" destination="BYZ-38-t0r" eventType="touchUpInside" id="da5-Rq-jDi"/>
+                                    <action selector="slideSwitch:" destination="BYZ-38-t0r" eventType="valueChanged" id="rJK-Os-3Bj"/>
                                 </connections>
-                            </button>
+                            </switch>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>
                         <constraints>
-                            <constraint firstItem="fax-MT-LyA" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leading" constant="288" id="31s-6z-qdb"/>
-                            <constraint firstItem="fax-MT-LyA" firstAttribute="leading" secondItem="yzT-Jp-aDJ" secondAttribute="leading" id="3Wy-35-JOL"/>
+                            <constraint firstItem="hm6-Ii-bp4" firstAttribute="top" secondItem="yzT-Jp-aDJ" secondAttribute="bottom" constant="98" id="D99-39-KKW"/>
                             <constraint firstItem="yzT-Jp-aDJ" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="Db1-Nc-GQC"/>
                             <constraint firstItem="yzT-Jp-aDJ" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" constant="260" id="I0m-tF-bZa"/>
-                            <constraint firstItem="fax-MT-LyA" firstAttribute="leading" secondItem="yzT-Jp-aDJ" secondAttribute="leading" id="Ici-ci-3gr"/>
                             <constraint firstItem="yzT-Jp-aDJ" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="223" id="Jsh-gu-xgn"/>
-                            <constraint firstItem="fax-MT-LyA" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" constant="268" id="SQH-zQ-EF9"/>
-                            <constraint firstItem="fax-MT-LyA" firstAttribute="leading" secondItem="yzT-Jp-aDJ" secondAttribute="leading" id="TLM-R0-ZcU"/>
-                            <constraint firstItem="yzT-Jp-aDJ" firstAttribute="width" secondItem="fax-MT-LyA" secondAttribute="width" id="ZsW-Fs-Fow"/>
+                            <constraint firstItem="hm6-Ii-bp4" firstAttribute="leading" secondItem="8bC-Xf-vdC" secondAttribute="leadingMargin" constant="256" id="Qaw-KU-ESl"/>
                             <constraint firstItem="yzT-Jp-aDJ" firstAttribute="top" secondItem="y3c-jy-aDJ" secondAttribute="bottom" constant="223" id="dIp-P7-lDw"/>
-                            <constraint firstItem="fax-MT-LyA" firstAttribute="top" secondItem="yzT-Jp-aDJ" secondAttribute="bottom" constant="30" id="fLj-GL-wtC"/>
-                            <constraint firstItem="fax-MT-LyA" firstAttribute="centerX" secondItem="8bC-Xf-vdC" secondAttribute="centerX" id="i2N-G2-Rju"/>
+                            <constraint firstItem="hm6-Ii-bp4" firstAttribute="leading" secondItem="yzT-Jp-aDJ" secondAttribute="leading" id="mdx-Wg-hwf"/>
                         </constraints>
                         <variation key="default">
                             <mask key="constraints">
                                 <exclude reference="Db1-Nc-GQC"/>
                                 <exclude reference="I0m-tF-bZa"/>
-                                <exclude reference="31s-6z-qdb"/>
-                                <exclude reference="3Wy-35-JOL"/>
-                                <exclude reference="Ici-ci-3gr"/>
-                                <exclude reference="SQH-zQ-EF9"/>
                             </mask>
                         </variation>
                     </view>
+                    <connections>
+                        <outlet property="uiSwitch" destination="hm6-Ii-bp4" id="43O-JN-hPj"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dkx-z0-nzr" sceneMemberID="firstResponder"/>
             </objects>

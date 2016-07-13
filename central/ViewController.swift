@@ -13,8 +13,8 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
-    var settingCharacteristic: CBCharacteristic!
     var outputCharacteristic: CBCharacteristic!
+    @IBOutlet weak var uiSwitch: UISwitch!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -36,27 +36,32 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         NSLog("SCAN Start")
       self.centralManager.scanForPeripheralsWithServices(nil, options: nil)
     }
-    
-    @IBAction func led(sender: AnyObject) {
-        NSLog("LED ON")
-        
-        var value: CUnsignedChar = 0x01 << 1
-        let data: NSData = NSData(bytes: &value, length: 1)
-        
-        self.peripheral.writeValue(data, forCharacteristic: self.settingCharacteristic, type: CBCharacteristicWriteType.WithoutResponse)
-        
-        self.peripheral.writeValue(data, forCharacteristic: self.outputCharacteristic, type: CBCharacteristicWriteType.WithoutResponse)
-    }
 
+
+    @IBAction func slideSwitch(sender: AnyObject) {
+        peripheral.readValueForCharacteristic(self.outputCharacteristic)
+        
+        var value: CUnsignedChar!
+        
+        if self.uiSwitch.on {
+            value = 0x01
+        } else {
+            value = 0x00
+        }
+        
+        let data: NSData = NSData(bytes: &value, length: 1)
+        self.peripheral.writeValue(data, forCharacteristic: self.outputCharacteristic, type: CBCharacteristicWriteType.WithResponse)
+    }
     
     func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
         
-        if peripheral.name == "konashi2-f025aa" {
+        NSLog("BLEデバイス \(peripheral)")
+        
+        if peripheral.name == "GENUINO 101-CCEE" {
           self.peripheral = peripheral
           self.centralManager.connectPeripheral(self.peripheral, options: nil)
         }
 
-        NSLog("BLEデバイス \(peripheral)")
         
     }
     
@@ -78,6 +83,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         for obj in services {
             if let service = obj as? CBService {
+                NSLog("サービス: \(service)")
                 peripheral.discoverCharacteristics(nil, forService: service)
             }
         }
@@ -90,15 +96,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         for obj in characteristics {
             if let characteristic = obj as? CBCharacteristic {
-                if characteristic.UUID.isEqual(CBUUID(string: "229B3000-03FB-40DA-98A7-B0DEF65C2D4B")) {
-                    self.settingCharacteristic = characteristic
-                } else if characteristic.UUID.isEqual(CBUUID(string: "229B3002-03FB-40DA-98A7-B0DEF65C2D4B")) {
+                
+                if characteristic.UUID.isEqual(CBUUID(string: "29B10001-E8F2-537E-4F6C-D104768A1214")) {
                     self.outputCharacteristic = characteristic
-                } else if characteristic.UUID.isEqual(CBUUID(string: "229B3003-03FB-40DA-98A7-B0DEF65C2D4B")) {
-                    peripheral.setNotifyValue(true, forCharacteristic: characteristic)
+                    NSLog("対象のキャラクラリスティックを発見")
                 }
                 
-                if characteristic.properties == CBCharacteristicProperties.Read {
+                if (characteristic.properties.rawValue & CBCharacteristicProperties.Read.rawValue) != 0 {
                     peripheral.readValueForCharacteristic(characteristic)
                 }
             }
@@ -114,14 +118,5 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             NSLog("Battery LEvel \(byte)")
         }
     }
-    
-    func peripheral(peripheral: CBPeripheral, didUpdateNotificationStateForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
-        if error != nil {
-            NSLog("Notify状態更新失敗: \(error)")
-        } else {
-            NSLog("Notify状態更新成功: \(characteristic.isNotifying)")
-        }
-    }
-    
 }
 
