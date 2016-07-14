@@ -14,7 +14,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
     var outputCharacteristic: CBCharacteristic!
-    @IBOutlet weak var uiSwitch: UISwitch!
+    @IBOutlet weak var valueLabel: UILabel!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,19 +38,13 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     }
 
 
-    @IBAction func slideSwitch(sender: AnyObject) {
+    @IBAction func readAlc(sender: AnyObject) {
         peripheral.readValueForCharacteristic(self.outputCharacteristic)
         
         var value: CUnsignedChar!
-        
-        if self.uiSwitch.on {
-            value = 0x01
-        } else {
-            value = 0x00
-        }
-        
         let data: NSData = NSData(bytes: &value, length: 1)
         self.peripheral.writeValue(data, forCharacteristic: self.outputCharacteristic, type: CBCharacteristicWriteType.WithResponse)
+        
     }
     
     func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
@@ -112,11 +106,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func peripheral(peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
         NSLog("読み出し成功 service UUID: \(characteristic.service.UUID), characteristic UUID: \(characteristic.UUID), value: \(characteristic.value)")
         
-        if characteristic.UUID.isEqual(CBUUID(string: "2A3A")) {
-            var byte: CUnsignedChar = 0
-            characteristic.value?.getBytes(&byte, length: 1)
-            NSLog("Battery LEvel \(byte)")
-        }
+        var out: NSInteger = 0
+        characteristic.value!.getBytes(&out, length: sizeof(NSInteger))
+
+        self.valueLabel.text = "\(out)"
     }
 }
 
