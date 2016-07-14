@@ -94,6 +94,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if characteristic.UUID.isEqual(CBUUID(string: "29B10001-E8F2-537E-4F6C-D104768A1214")) {
                     self.outputCharacteristic = characteristic
                     NSLog("対象のキャラクラリスティックを発見")
+                    peripheral.setNotifyValue(true, forCharacteristic: characteristic)
                 }
                 
                 if (characteristic.properties.rawValue & CBCharacteristicProperties.Read.rawValue) != 0 {
@@ -111,5 +112,14 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 
         self.valueLabel.text = "\(out)"
     }
+    
+    func peripheral(peripheral: CBPeripheral, didUpdateNotificationStateForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
+        if error != nil {
+            NSLog("状態更新失敗 \(error)")
+        } else {
+            NSLog("状態更新成功 \(characteristic.isNotifying)")
+        }
+    }
+    
 }
 
