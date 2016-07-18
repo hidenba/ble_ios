@@ -14,8 +14,10 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
     var outputCharacteristic: CBCharacteristic!
-    @IBOutlet weak var valueLabel: UILabel!
+    @IBOutlet weak var readButton: UIButton!
     
+    @IBOutlet weak var scanButton: UIButton!
+    @IBOutlet weak var valueLabel: UILabel!
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -34,17 +36,24 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 
     @IBAction func scan(sender: AnyObject) {
         NSLog("SCAN Start")
+      self.scanButton.enabled = false
       self.centralManager.scanForPeripheralsWithServices(nil, options: nil)
     }
 
 
     @IBAction func readAlc(sender: AnyObject) {
-        peripheral.readValueForCharacteristic(self.outputCharacteristic)
+        self.readButton.enabled = false
+        
+        NSTimer.scheduledTimerWithTimeInterval(7.0, target: self, selector: #selector(ViewController.enableButton), userInfo: nil, repeats: false)
         
         var value: CUnsignedChar!
         let data: NSData = NSData(bytes: &value, length: 1)
         self.peripheral.writeValue(data, forCharacteristic: self.outputCharacteristic, type: CBCharacteristicWriteType.WithResponse)
-        
+    }
+    
+    func enableButton() {
+        self.readButton.enabled = true
+        self.peripheral.readValueForCharacteristic(self.outputCharacteristic)
     }
     
     func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
@@ -94,11 +103,12 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
                 if characteristic.UUID.isEqual(CBUUID(string: "29B10001-E8F2-537E-4F6C-D104768A1214")) {
                     self.outputCharacteristic = characteristic
                     NSLog("対象のキャラクラリスティックを発見")
+                    
+                    self.valueLabel.hidden = false
+                    self.readButton.hidden = false
+                    self.scanButton.enabled = true
+                    self.scanButton.hidden = true
                     peripheral.setNotifyValue(true, forCharacteristic: characteristic)
-                }
-                
-                if (characteristic.properties.rawValue & CBCharacteristicProperties.Read.rawValue) != 0 {
-                    peripheral.readValueForCharacteristic(characteristic)
                 }
             }
         }
@@ -111,6 +121,26 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         characteristic.value!.getBytes(&out, length: sizeof(NSInteger))
 
         self.valueLabel.text = "\(out)"
+        
+        let request = NSMutableURLRequest(URL: NSURL(string: "http://alcendpoint.herokuapp.com/sensors")!)
+        request.HTTPMethod = "POST"
+        let postString = "sensor[client_id]=101-CCEE&sensor[value]=\(out)"
+        request.HTTPBody = postString.dataUsingEncoding(NSUTF8StringEncoding)
+        let task = NSURLSession.sharedSession().dataTaskWithRequest(request) { data, response, error in
+            guard error == nil && data != nil else {                                                          // check for fundamental networking error
+                print("error=\(error)")
+                return
+            }
+            
+            if let httpStatus = response as? NSHTTPURLResponse where httpStatus.statusCode != 200 {           // check for http errors
+                print("statusCode should be 200, but is \(httpStatus.statusCode)")
+                print("response = \(response)")
+            }
+            
+            let responseString = NSString(data: data!, encoding: NSUTF8StringEncoding)
+            print("responseString = \(responseString)")
+        }
+        task.resume()
     }
     
     func peripheral(peripheral: CBPeripheral, didUpdateNotificationStateForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
@@ -120,6 +150,5 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
             NSLog("状態更新成功 \(characteristic.isNotifying)")
         }
     }
-    
 }
 
