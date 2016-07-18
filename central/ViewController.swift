@@ -13,9 +13,11 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 
     var centralManager: CBCentralManager!
     var peripheral: CBPeripheral!
-    var settingCharacteristic: CBCharacteristic!
     var outputCharacteristic: CBCharacteristic!
+    @IBOutlet weak var readButton: UIButton!
     
+    @IBOutlet weak var scanButton: UIButton!
+    @IBOutlet weak var valueLabel: UILabel!
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
@@ -34,29 +36,35 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
 
     @IBAction func scan(sender: AnyObject) {
         NSLog("SCAN Start")
+      self.scanButton.enabled = false
       self.centralManager.scanForPeripheralsWithServices(nil, options: nil)
     }
-    
-    @IBAction func led(sender: AnyObject) {
-        NSLog("LED ON")
-        
-        var value: CUnsignedChar = 0x01 << 1
-        let data: NSData = NSData(bytes: &value, length: 1)
-        
-        self.peripheral.writeValue(data, forCharacteristic: self.settingCharacteristic, type: CBCharacteristicWriteType.WithoutResponse)
-        
-        self.peripheral.writeValue(data, forCharacteristic: self.outputCharacteristic, type: CBCharacteristicWriteType.WithoutResponse)
-    }
 
+
+    @IBAction func readAlc(sender: AnyObject) {
+        self.readButton.enabled = false
+        
+        NSTimer.scheduledTimerWithTimeInterval(7.0, target: self, selector: #selector(ViewController.enableButton), userInfo: nil, repeats: false)
+        
+        var value: CUnsignedChar!
+        let data: NSData = NSData(bytes: &value, length: 1)
+        self.peripheral.writeValue(data, forCharacteristic: self.outputCharacteristic, type: CBCharacteristicWriteType.WithResponse)
+    }
+    
+    func enableButton() {
+        self.readButton.enabled = true
+        self.peripheral.readValueForCharacteristic(self.outputCharacteristic)
+    }
     
     func centralManager(central: CBCentralManager, didDiscoverPeripheral peripheral: CBPeripheral, advertisementData: [String : AnyObject], RSSI: NSNumber) {
         
-        if peripheral.name == "konashi2-f025aa" {
+        NSLog("BLEデバイス \(peripheral)")
+        
+        if peripheral.name == "GENUINO 101-CCEE" {
           self.peripheral = peripheral
           self.centralManager.connectPeripheral(self.peripheral, options: nil)
         }
 
-        NSLog("BLEデバイス \(peripheral)")
         
     }
     
@@ -78,6 +86,7 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         for obj in services {
             if let service = obj as? CBService {
+                NSLog("サービス: \(service)")
                 peripheral.discoverCharacteristics(nil, forService: service)
             }
         }
@@ -90,16 +99,16 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
         
         for obj in characteristics {
             if let characteristic = obj as? CBCharacteristic {
-                if characteristic.UUID.isEqual(CBUUID(string: "229B3000-03FB-40DA-98A7-B0DEF65C2D4B")) {
-                    self.settingCharacteristic = characteristic
-                } else if characteristic.UUID.isEqual(CBUUID(string: "229B3002-03FB-40DA-98A7-B0DEF65C2D4B")) {
-                    self.outputCharacteristic = characteristic
-                } else if characteristic.UUID.isEqual(CBUUID(string: "229B3003-03FB-40DA-98A7-B0DEF65C2D4B")) {
-                    peripheral.setNotifyValue(true, forCharacteristic: characteristic)
-                }
                 
-                if characteristic.properties == CBCharacteristicProperties.Read {
-                    peripheral.readValueForCharacteristic(characteristic)
+                if characteristic.UUID.isEqual(CBUUID(string: "29B10001-E8F2-537E-4F6C-D104768A1214")) {
+                    self.outputCharacteristic = characteristic
+                    NSLog("対象のキャラクラリスティックを発見")
+                    
+                    self.valueLabel.hidden = false
+                    self.readButton.hidden = false
+                    self.scanButton.enabled = true
+                    self.scanButton.hidden = true
+                    peripheral.setNotifyValue(true, forCharacteristic: characteristic)
                 }
             }
         }
@@ -108,20 +117,38 @@ class ViewController: UIViewController, CBCentralManagerDelegate, CBPeripheralDe
     func peripheral(peripheral: CBPeripheral, didUpdateValueForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
         NSLog("読み出し成功 service UUID: \(characteristic.service.UUID), characteristic UUID: \(characteristic.UUID), value: \(characteristic.value)")
         
-        if characteristic.UUID.isEqual(CBUUID(string: "2A3A")) {
-            var byte: CUnsignedChar = 0
-            characteristic.value?.getBytes(&byte, length: 1)
-            NSLog("Battery LEvel \(byte)")
+        var out: NSInteger = 0
+        characteristic.value!.getBytes(&out, length: sizeof(NSInteger))
+
+        self.valueLabel.text = "\(out)"
+        
+        let request = NSMutableURLRequest(URL: NSURL(string: "http://alcendpoint.herokuapp.com/sensors")!)
+        request.HTTPMethod = "POST"
+        let postString = "sensor[client_id]=101-CCEE&sensor[value]=\(out)"
+        request.HTTPBody = postString.dataUsingEncoding(NSUTF8StringEncoding)
+        let task = NSURLSession.sharedSession().dataTaskWithRequest(request) { data, response, error in
+            guard error == nil && data != nil else {                                                          // check for fundamental networking error
+                print("error=\(error)")
+                return
+            }
+            
+            if let httpStatus = response as? NSHTTPURLResponse where httpStatus.statusCode != 200 {           // check for http errors
+                print("statusCode should be 200, but is \(httpStatus.statusCode)")
+                print("response = \(response)")
+            }
+            
+            let responseString = NSString(data: data!, encoding: NSUTF8StringEncoding)
+            print("responseString = \(responseString)")
         }
+        task.resume()
     }
     
     func peripheral(peripheral: CBPeripheral, didUpdateNotificationStateForCharacteristic characteristic: CBCharacteristic, error: NSError?) {
         if error != nil {
-            NSLog("Notify状態更新失敗: \(error)")
+            NSLog("状態更新失敗 \(error)")
         } else {
-            NSLog("Notify状態更新成功: \(characteristic.isNotifying)")
+            NSLog("状態更新成功 \(characteristic.isNotifying)")
         }
     }
-    
 }
 
